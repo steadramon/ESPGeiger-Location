@@ -51,15 +51,33 @@
       }
 
       var radius = e.accuracy / 2;
-
-      current_position = L.marker(e.latlng).addTo(map)
-        .bindPopup("You are within " + radius + " meters from this point").openPopup();
-
-      current_accuracy = L.circle(e.latlng, radius).addTo(map);
+      current_position = L.marker(e.latlng, {draggable:'true'}).addTo(map);
+  current_position.on('dragend', function(event){
+    var marker = event.target;
+    var position = marker.getLatLng();
+    map.panTo(new L.LatLng(position.lat, position.lng))
+  });
     }
 
     function onLocationError(e) {
-      alert(e.message);
+callWs = function(){
+	// The Endpoint URL
+	let url = 'https://ipinfo.io/json'
+	fetch(url)
+  .then(function(response) {
+  	// Render the Response Status
+    // Parse the body as JSON
+    return response.json();
+  })
+  .then(function(json) {
+  	// Render the parsed body
+      e.latlng = new L.latLng(json.loc.split(','));
+      map.panTo(e.latlng);
+      e.accuracy = 100;
+      onLocationFound(e);
+  })
+}
+callWs();
     }
 
     map.on('locationfound', onLocationFound);
