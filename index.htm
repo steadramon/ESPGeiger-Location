@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ESPGeiger · Set location</title>
 
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     crossorigin="">
@@ -21,7 +22,9 @@
       display:flex; align-items:center; gap:12px;
       padding: 10px 16px; flex-wrap: wrap;
     }
-    #bar h1 { margin:0; font-size: 18px; font-weight: 600; letter-spacing:.2px; }
+    #bar h1 { margin:0; font-size: 18px; font-weight: 600; letter-spacing:.2px;
+              display:flex; align-items:center; gap:8px; }
+    #bar h1 svg { width:24px; height:24px; flex-shrink:0; }
     #coords {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
       font-size: 15px; background:#222; color:#eee;
@@ -56,7 +59,14 @@
 <body>
 
 <div id="bar">
-  <h1>📍 ESPGeiger · Set location</h1>
+  <h1>
+    <svg viewBox="0 0 512 512" aria-hidden="true">
+      <path fill="#666" d="M256 0a256 256 0 1 1 0 512 256 256 0 0 1 0-512z"/>
+      <path fill="#FB2" d="M256 36a220 220 0 1 1 0 440 220 220 0 0 1 0-440z"/>
+      <path fill="#555" d="M256 286a30 30 0 1 0 0-60 30 30 0 0 0 0 60zm28-82 62-109a182 182 0 0 0-182 1l63 109a57 57 0 0 1 57-1zm155 51H313c0 21-11 39-28 49l64 108c54-32 90-90 90-157zM163 412l64-108a57 57 0 0 1-28-49H73c0 67 36 125 90 157z"/>
+    </svg>
+    <span>ESPGeiger · Set location</span>
+  </h1>
   <div id="coords">locating…</div>
   <button class="ghost"   id="locate">📍 Locate me</button>
   <button class="ghost"   id="copy"  disabled>Copy</button>
@@ -83,23 +93,17 @@
   const applyBtn   = document.getElementById('apply');
   const locateBtn  = document.getElementById('locate');
 
-  // Two ways to reach a device:
-  //   1. window.opener — we were opened from the device's /param page.
-  //      postMessage the coords back; no navigation needed. Preferred.
-  //   2. `host=` URL param — standalone, fall back to top-level HTTP
-  //      redirect to http://<host>/setlatlon?lat=…&lon=…
-  // Either is enough to show the Apply button.
-  //
-  // Reading `window.opener` across http→https can throw or silently
-  // return null depending on the browser's cross-origin-opener policy,
-  // so wrap it and treat any error as "no opener".
-  const params = new URLSearchParams(location.search);
-  const host   = params.get('host');
+  // Apply button only matters when we have a window.opener to postMessage
+  // to — i.e. the popup was launched from the device's /param page.
+  // Standalone visitors can still see the map and copy coords manually.
+  // Reading window.opener across http→https can throw in some browsers'
+  // cross-origin-opener policy, so wrap it defensively.
   let hasOpener = false;
-  try { hasOpener = !!(window.opener); } catch (_) {}
-  if (host || hasOpener) applyBtn.hidden = false;
-  if (hasOpener) applyBtn.textContent = 'Send to device';
-  console.log('loc.espgeiger: hasOpener=' + hasOpener + ', host=' + host);
+  try { hasOpener = !!window.opener; } catch (_) {}
+  if (hasOpener) {
+    applyBtn.hidden = false;
+    applyBtn.textContent = 'Send to device';
+  }
 
   let marker = null, lat = null, lon = null;
 
@@ -146,38 +150,22 @@
 
   applyBtn.addEventListener('click', () => {
     if (lat == null) return;
-
-    // Preferred path: postMessage back to opener. The device's /param
-    // page has a listener that populates the lat/lon inputs live.
-    let sent = false;
     try {
       if (window.opener && !window.opener.closed) {
         window.opener.postMessage(
           { type: 'espgeiger-location', lat: lat, lon: lon }, '*'
         );
-        sent = true;
       }
-    } catch (_) { /* opener unavailable / severed — fall through */ }
-
-    if (sent) {
-      // Some browsers refuse window.close() on popups opened cross-scheme
-      // (http opener → https popup). Try anyway, then show a "done" hint
-      // so the user knows to close the tab manually.
-      try { window.close(); } catch (_) {}
-      setTimeout(() => {
-        // If we're still here half a second later, close failed.
-        coordsEl.textContent = '✓ Sent to device — close this tab';
-        applyBtn.disabled = true;
-        applyBtn.textContent = 'Sent';
-      }, 500);
-      return;
-    }
-
-    if (host) {
-      // Standalone flow — top-level navigation from HTTPS → HTTP LAN is
-      // allowed by browsers (mixed-content only blocks subresources).
-      location.href = 'http://' + host + '/setlatlon?lat=' + lat + '&lon=' + lon;
-    }
+    } catch (_) { /* opener severed — nothing more we can do */ }
+    // Some browsers refuse window.close() on popups opened cross-scheme
+    // (http opener → https popup). Try anyway; if we're still here after
+    // a moment, show a hint so the user knows to close the tab manually.
+    try { window.close(); } catch (_) {}
+    setTimeout(() => {
+      coordsEl.textContent = '✓ Sent to device — close this tab';
+      applyBtn.disabled = true;
+      applyBtn.textContent = 'Sent';
+    }, 500);
   });
 
   // Re-trigger browser geolocation on demand. Useful if the user denied
