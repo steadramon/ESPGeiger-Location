@@ -67,9 +67,10 @@
 
 <script>
 (function () {
-  const map = L.map('map', { zoomControl: true });
+  const map = L.map('map', { zoomControl: true }).setView([20, 0], 2);
   L.tileLayer('https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png', {
     maxZoom: 19,
+    subdomains: 'abcd',
     attribution:
       '&copy; <a href="https://openstreetmap.org/copyright">OpenStreetMap</a> ' +
       '&copy; <a href="https://carto.com/attribution">CARTO</a> · ' +
