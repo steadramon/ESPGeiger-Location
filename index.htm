@@ -14,64 +14,94 @@
     crossorigin=""></script>
 
   <style>
-    :root { color-scheme: light dark; }
-    body { margin:0; padding:0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
-    #bar {
-      position: fixed; top:0; left:0; right:0;
-      background:#1a1d20; color:#dee2e6; z-index:1000;
-      display:flex; align-items:center; gap:12px;
-      padding: 10px 16px; flex-wrap: wrap;
+    /* Brand tokens mirror brand.css on install.espgeiger.com. Keep in sync. */
+    :root {
+      --page:   #1a1d20;
+      --card:   #2b3035;
+      --fg:     #dee2e6;
+      --muted:  #adb5bd;
+      --border: #373b3e;
+      --bar:    #0f1113;
+      --accent: #06c;
+      --accent-hover: #0573e6;
+      --brand-font: "Courier New", Courier, monospace;
+      --body-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color-scheme: dark;
     }
-    #bar h1 { margin:0; font-size: 18px; font-weight: 600; letter-spacing:.2px;
-              display:flex; align-items:center; gap:8px; }
-    #bar h1 svg { width:24px; height:24px; flex-shrink:0; }
+    html, body { margin: 0; padding: 0; background: var(--page); color: var(--fg); font-family: var(--body-font); }
+
+    .topbar {
+      position: fixed; top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      padding: 14px 20px;
+      background: var(--bar);
+      border-bottom: 1px solid var(--border);
+    }
+    .topbar svg.logo { width: 36px; height: 36px; flex-shrink: 0; }
+    .topbar .title {
+      font-family: var(--brand-font);
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: .2px;
+    }
+    .topbar .sub { color: var(--muted); font-size: 15px; }
+    .topbar .spacer { flex: 1; }
+
     #coords {
       font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 15px; background:#2b3035; color:#dee2e6;
+      font-size: 14px;
+      background: var(--card); color: var(--fg);
       padding: 8px 14px; border-radius: 6px;
-      flex: 1 1 180px; min-width: 180px;
+      min-width: 180px;
     }
     button {
-      border: 0; padding: 10px 18px; border-radius: 6px;
-      font-size: 15px; font-weight: 500; cursor: pointer;
-      transition: background .15s;
+      font-family: var(--body-font);
+      border: 0; padding: 9px 16px; border-radius: 6px;
+      font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
     }
-    .primary { background:#06c; color:#fff; }
-    .primary:hover { opacity:.9; }
-    .primary:disabled { background:#373b3e; cursor: not-allowed; }
-    .ghost { background: transparent; color:#dee2e6; border: 1px solid #373b3e; }
-    .ghost:hover { background:#2b3035; }
-    .ghost:disabled { border-color:#373b3e; color:#6c757d; cursor: not-allowed; }
-    #map { position: absolute; top:56px; bottom:0; right:0; left:0; }
+    .primary { background: var(--accent); color: #fff; }
+    .primary:hover { background: var(--accent-hover); }
+    .primary:disabled { background: var(--border); cursor: not-allowed; }
+    .ghost { background: transparent; color: var(--fg); border: 1px solid var(--border); }
+    .ghost:hover { background: var(--card); }
+    .ghost:disabled { border-color: var(--border); color: #6c757d; cursor: not-allowed; }
+
+    #map { position: absolute; top: 70px; bottom: 0; right: 0; left: 0; }
     #hint {
       position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
-      background: #000000bf; color:#dee2e6; font-size: 13px;
+      background: rgba(0,0,0,.75); color: var(--fg); font-size: 13px;
       padding: 6px 12px; border-radius: 4px; z-index: 1000;
       pointer-events: none;
     }
-    @media (max-width: 540px) {
-      #bar { padding: 8px 10px; gap: 8px; }
-      #bar h1 { font-size: 15px; }
-      #map { top: 110px; }
+
+    @media (max-width: 640px) {
+      .topbar { padding: 10px 14px; gap: 8px; }
+      .topbar .title { font-size: 18px; }
+      .topbar .sub { font-size: 13px; }
+      #coords { font-size: 13px; padding: 6px 10px; min-width: 140px; flex: 1 1 100%; }
+      #map { top: 140px; }
     }
   </style>
 </head>
 <body>
 
-<div id="bar">
-  <h1>
-    <svg viewBox="0 0 512 512" aria-hidden="true">
-      <path fill="#666" d="M256 0a256 256 0 1 1 0 512 256 256 0 0 1 0-512z"/>
-      <path fill="#FB2" d="M256 36a220 220 0 1 1 0 440 220 220 0 0 1 0-440z"/>
-      <path fill="#555" d="M256 286a30 30 0 1 0 0-60 30 30 0 0 0 0 60zm28-82 62-109a182 182 0 0 0-182 1l63 109a57 57 0 0 1 57-1zm155 51H313c0 21-11 39-28 49l64 108c54-32 90-90 90-157zM163 412l64-108a57 57 0 0 1-28-49H73c0 67 36 125 90 157z"/>
-    </svg>
-    <span>ESPGeiger · Set location</span>
-  </h1>
+<header class="topbar">
+  <svg class="logo" viewBox="0 0 512 512" aria-hidden="true">
+    <path fill="#666" d="M256 0a256 256 0 1 1 0 512 256 256 0 0 1 0-512z"/>
+    <path fill="#FB2" d="M256 36a220 220 0 1 1 0 440 220 220 0 0 1 0-440z"/>
+    <path fill="#555" d="M256 286a30 30 0 1 0 0-60 30 30 0 0 0 0 60zm28-82 62-109a182 182 0 0 0-182 1l63 109a57 57 0 0 1 57-1zm155 51H313c0 21-11 39-28 49l64 108c54-32 90-90 90-157zM163 412l64-108a57 57 0 0 1-28-49H73c0 67 36 125 90 157z"/>
+  </svg>
+  <span class="title">ESPGeiger</span>
+  <span class="sub">Set location</span>
+  <span class="spacer"></span>
   <div id="coords">locating…</div>
   <button class="ghost"   id="locate">📍 Locate me</button>
   <button class="ghost"   id="copy"  disabled>Copy</button>
   <button class="primary" id="apply" disabled hidden>Apply to device</button>
-</div>
+</header>
 
 <div id="map"></div>
 <div id="hint">Drag the marker (or click the map) to fine-tune.</div>
